@@ -7,5 +7,9 @@ An upright game where you dig down and find treasure and figure out a way to get
 
 [love]: https://love2d.org "Love2d"
 
+# What's it look like
+
+![An animated gif screenshot](http://extrafuture.s3.amazonaws.com/wordpress/wp-content/uploads/2016/07/gaem.gif)
+
 # I really like dig dug ok ok
 Me too
