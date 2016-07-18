@@ -122,14 +122,15 @@ function draw_title_screen()
     love.graphics.setColor(255,255,255)
     love.graphics.print("DIG_IT!", 10, 100)
     love.graphics.setFont(sub_font)
-    love.graphics.print("a digging game", 10, 150)
+    love.graphics.print("an infinitely generated digging game", 10, 150)
     
     love.graphics.print("* you're the white square.", 10, 450)
     love.graphics.print("* dig down to get treasure!", 10, 480)
     love.graphics.print("* leave the greenies alone and", 10, 510)
     love.graphics.print("they won't hurt you.", 10, 540)
     love.graphics.print("* don't fall more than 2 spaces!!", 10, 570)
-    love.graphics.print("* you never know where exits lead!", 10, 600)
+    love.graphics.print("* Go to new sections of cave by", 10, 600)
+    love.graphics.print("walking beyond the screen edge", 10, 630)
     
     love.graphics.print("an extrafuture game by @philnelson", 30, 760)
     
@@ -304,7 +305,7 @@ function draw_treasure()
     for i=1, #treasure do
         if treasure[i].status == "out" then
             love.graphics.setColor(214, 219, 46)
-            love.graphics.rectangle( 'fill', map_x+(treasure[i].x*tile_w), map_y+(treasure[i].y*tile_h)-10,  tile_w, tile_h+10)
+            love.graphics.rectangle( 'fill', map_x+(treasure[i].x*tile_w), map_y+(treasure[i].y*tile_h),  tile_w, tile_h)
         else
         
         end
