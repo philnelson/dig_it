@@ -12,7 +12,16 @@ function love.load()
     if isDir == true then
     
     else
-        success = love.filesystem.createDirectory( "saves" )  
+        success = love.filesystem.createDirectory( "saves" )
+    end
+    
+    -- do we have a cemetery?
+    isFile = love.filesystem.isFile( "cemetery.txt" )
+    
+    if isFile == true then
+        
+    else
+        success = love.filesystem.write( "cemetery.txt", "{}" )
     end
 
     math.randomseed( os.time() )
@@ -170,7 +179,8 @@ function hurt_player(n, reason)
     player.hp = player.hp - total_damage
 
     if player.hp == 0 then
-        mode = "gameover" 
+        mode = "gameover"
+        save_death()
     end
 end
 
@@ -326,6 +336,8 @@ function love.keypressed(key)
    if mode == "gameover" then
        
        if key == "y" then
+          map_world_x = 0
+          map_world_y = 0
           set_up_map(5,0,2, 1, 0)
           mode = "map"
        end
@@ -435,12 +447,36 @@ function save_map()
     success = love.filesystem.write( 'saves/' .. map_world_x .. map_world_y .. '.txt', table.tostring(save_data)) 
 end
 
+function save_death()
+    
+    local save_file, len = love.filesystem.read('cemetery.txt')
+    
+    if save_file == nil then
+        print("no cemetery file found")
+    else
+        print(save_file)
+        loadstring("cemetery_data=" .. save_file)()
+    
+        data = {death_by = game_state.death_by, steps = player.steps, date = os.time(), room = {x = map_world_x, y = map_world_y}}
+        
+        table.insert(cemetery_data, data)
+    
+        success, errormsg = love.filesystem.write( "cemetery.txt", table.tostring(cemetery_data))
+    
+        if errormsg then
+           print("Couldn't save death and score.")
+        end
+    end
+end
+
 function move_player(x,y)
     if pre_move_checks(x,y) == true then
 
         -- move the player
         player.x = x
         player.y = y
+        
+        player.steps = player.steps + 1
         
         -- move monsters
         move_monsters()
@@ -706,7 +742,7 @@ end
 function set_up_map(start_x, start_y, player_hp, danger, gold)
     
     -- init player
-    player = {hp = player_hp,x = start_x, y = start_y, status = "fine", x_display=0, y_display = 0, gold = gold, falling = false}
+    player = {hp = player_hp,x = start_x, y = start_y, status = "fine", x_display=0, y_display = 0, gold = gold, falling = false, steps = 0}
 
     player_fall_start = {}
     player_fall_end = {}
