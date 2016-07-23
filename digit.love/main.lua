@@ -583,6 +583,8 @@ function post_move_checks(x,y)
         end
     end
     
+    redig_caves()
+    
 end
 
 function monster_factory(n)
@@ -711,6 +713,23 @@ function dig_caves(n)
         map[try_x+2][try_y+1] = 3
     end
     
+end
+
+function redig_caves()
+    for x=0, map_w do
+        for y=0, map_h do
+            
+            -- is it dug out?
+            if map[x][y] == 2 then
+                if map[x][y-1] == 2 then
+                    map[x][y] = 3
+                elseif map[x][y+1] == 2 then
+                    map[x][y] = 3
+                end
+            end
+            
+        end
+    end
 end
 
 function create_treasure(n)
@@ -865,6 +884,8 @@ function set_up_map(start_x, start_y, player_hp, danger, gold, force_new)
         save_map()
         print("Map saved.")
     end
+    
+    redig_caves()
 end
 
 function load_map(x,y,start_x, start_y)
@@ -874,7 +895,6 @@ function load_map(x,y,start_x, start_y)
     if save_file == nil then
         print("no save file found for " .. x .. ", " .. y)
     else
-    
         loadstring("save_file_data=" .. save_file)()
         
         treasure = save_file_data.treasure
