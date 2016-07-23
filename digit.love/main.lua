@@ -198,6 +198,7 @@ function hurt_player(n, reason)
     player.hp = player.hp - total_damage
 
     if player.hp == 0 then
+        save_map()
         mode = "gameover"
         save_death()
     end
