@@ -10,18 +10,32 @@ function love.load()
     -- do we have saves?
     isDir = love.filesystem.isDirectory( "saves" )
     if isDir == true then
-    
+        print("Saves directory exists")
     else
+        print("No saves directory, creating...")
         success = love.filesystem.createDirectory( "saves" )
+        if success == false then
+            print("Could not create saves directroy, exiting")
+            love.event.quit();
+        else
+            print("Created saves directory.")
+        end
     end
     
     -- do we have a cemetery?
     isFile = love.filesystem.isFile( "cemetery.txt" )
     
     if isFile == true then
-        
+        print("Cemetary exists.")
     else
+        print("No saves directory, creating...")
         success = love.filesystem.write( "cemetery.txt", "{}" )
+        if success == true then
+            print("Cemetary created.")
+        else
+            print("Cemetary could not be created, exiting.")
+            love.event.quit();
+        end
     end
 
     math.randomseed( os.time() )
@@ -60,7 +74,7 @@ function love.load()
     map_world_x = 0
     map_world_y = 0
     
-    set_up_map(5,0,2,map_danger, 0)
+    set_up_map(5,0,2,map_danger, 0, false)
     
     mode = "title"
     
@@ -107,6 +121,10 @@ function love.draw()
     if mode == "title" then
         draw_title_screen()
     end
+    
+    if mode == "new_world_confirm" then
+        draw_new_world_confirm()
+    end
 
     if mode == "exiting" then
         draw_exit_modal()
@@ -145,7 +163,8 @@ function draw_title_screen()
     
     
     
-    love.graphics.print("press enter to play", 110, 300)
+    love.graphics.print("press 'enter' to play", 110, 300)
+    love.graphics.print("press 'G' to generate a new world", 35, 350)
 end
 
 function draw_mobs()
@@ -303,6 +322,8 @@ function draw_map()
             -- dug out
             love.graphics.setColor(64, 40, 5)
             love.graphics.rectangle( 'fill', map_x+(x*tile_w), map_y+(y*tile_h),  tile_w, tile_h)
+        elseif map[x][y] == 3 then
+            -- cave
         end
 
             love.graphics.setColor(255, 255, 255)
@@ -338,7 +359,7 @@ function love.keypressed(key)
        if key == "y" then
           map_world_x = 0
           map_world_y = 0
-          set_up_map(5,0,2, 1, 0)
+          set_up_map(5,0,2, 1, 0, false)
           mode = "map"
        end
        
@@ -350,6 +371,15 @@ function love.keypressed(key)
         
         if key == "return" then
            mode="map"
+        end
+        
+        if key == "g" then
+           mode="new_world_confirm" 
+        end
+        
+    elseif mode == "new_world_confirm" then
+        if key == "g" then
+           destroy_the_world()
         end
     
     elseif mode == "next_room" then
@@ -381,7 +411,7 @@ function love.keypressed(key)
             print("loading " .. map_world_x .. ", " .. map_world_y)
             
             if success == nil then
-                set_up_map(start_x, start_y, player.hp, 1, player.gold)
+                set_up_map(start_x, start_y, player.hp, 1, player.gold, false)
             else
                 load_map(map_world_x, map_world_y, start_x, start_y)
             end
@@ -536,7 +566,7 @@ end
 
 function post_move_checks(x,y)
     
-    if map[player.x][player.y+1] == 2 then
+    if map[player.x][player.y+1] == 3 then
          player.falling = true
     end
     
@@ -552,6 +582,7 @@ function post_move_checks(x,y)
             end
         end
     end
+    
 end
 
 function monster_factory(n)
@@ -602,12 +633,16 @@ function move_monsters()
            if try_x > 0 then
                if map[try_x][try_y] == 2 then
                    move_allowed = true
+               elseif map[try_x][try_y] == 3 then
+                   move_allowed = true
                end
            end
        else
            try_x = mobs[i].x+1
            if try_x < map_w then
                if map[try_x][try_y] == 2 then
+                   move_allowed = true
+               elseif map[try_x][try_y] == 3 then
                    move_allowed = true
                end
            end
@@ -621,8 +656,33 @@ function move_monsters()
        
        if map[mobs[i].x][mobs[i].y+1] == 2 then
             mobs[i].status = "falling"
+        elseif map[mobs[i].x][mobs[i].y+1] == 3 then
+            mobs[i].status = "falling"
        end
    end 
+end
+
+function destroy_the_world()
+    
+    if love.filesystem.isDirectory("saves") then
+        for _, child in pairs(love.filesystem.getDirectoryItems("saves")) do
+            
+            love.filesystem.remove("saves" .. '/' .. child);
+        end
+    elseif love.filesystem.isFile("saves") then
+        love.filesystem.remove("saves");
+    end
+
+        
+    success = love.filesystem.createDirectory( "saves" )
+    print("create saves")
+    print(success)
+
+    set_up_map(5,0,2, 1, 0, true)
+    
+    mode = "title"
+    
+    return success
 end
 
 function dig_caves(n)
@@ -635,20 +695,20 @@ function dig_caves(n)
         try_x = math.random(2,map_w-2)
     
         -- top row
-        map[try_x-1][try_y-1] = 2
-        map[try_x][try_y-1] = 2
-        map[try_x+1][try_y-1] = 2
-        map[try_x+2][try_y-1] = 2
+        map[try_x-1][try_y-1] = 3
+        map[try_x][try_y-1] = 3
+        map[try_x+1][try_y-1] = 3
+        map[try_x+2][try_y-1] = 3
         -- middle row
-        map[try_x-1][try_y] = 2
-        map[try_x][try_y] = 2
-        map[try_x+1][try_y] = 2
-        map[try_x+2][try_y] = 2
+        map[try_x-1][try_y] = 3
+        map[try_x][try_y] = 3
+        map[try_x+1][try_y] = 3
+        map[try_x+2][try_y] = 3
         -- bottom
-        map[try_x-1][try_y+1] = 2
-        map[try_x][try_y+1] = 2
-        map[try_x+1][try_y+1] = 2
-        map[try_x+2][try_y+1] = 2
+        map[try_x-1][try_y+1] = 3
+        map[try_x][try_y+1] = 3
+        map[try_x+1][try_y+1] = 3
+        map[try_x+2][try_y+1] = 3
     end
     
 end
@@ -664,11 +724,12 @@ function bury_ancient_treasure(n)
     for i=1, n do
         goodspot = false
         while goodspot == false do
+            print("Trying to bury " .. i .. "...")
             try_y = math.random(2,map_h-1)
             try_x = math.random(1,map_w-1)
         
             -- is the space dug out?
-            if map[try_x][try_y] == 2 then
+            if map[try_x][try_y] == 3 then
                 -- is there "floor" underneath it?
                 if map[try_x][try_y+1] == 0 then
                     goodspot = true
@@ -739,7 +800,7 @@ function draw_gameover_modal()
     
 end
 
-function set_up_map(start_x, start_y, player_hp, danger, gold)
+function set_up_map(start_x, start_y, player_hp, danger, gold, force_new)
     
     -- init player
     player = {hp = player_hp,x = start_x, y = start_y, status = "fine", x_display=0, y_display = 0, gold = gold, falling = false, steps = 0}
@@ -751,45 +812,58 @@ function set_up_map(start_x, start_y, player_hp, danger, gold)
     player.x_display = player.x*spriteWidth
     player.y_display = player.y*spriteHeight+map_y
     
-    success = love.filesystem.read( 'saves/' .. map_world_x .. map_world_y .. '.txt')
-    
     print("loading " .. map_world_x .. ", " .. map_world_y)
-    
-    if success ~= nil then
+    the_map = love.filesystem.read( 'saves/' .. map_world_x .. map_world_y .. '.txt')
+
+    if the_map ~= nil then
+        print("Screen loaded.")
         load_map(map_world_x, map_world_y, start_x, start_y)
     else
-    
+        print("Screen could not be loaded.")
+
         map_name = "the " .. first_names[math.random(1,#first_names)] .. " " .. last_names[math.random(1,#last_names)]
+        
+        print("Creating new map, " .. map_name)
     
         tiles = {}
         treasure = {}
         map={}
     
         -- build out map
+        print("Building map...")
         for x=0, map_w do
             map[x] = {}
            for y=0, map_h do
               map[x][y] = 0
            end
         end
+        print("Map built.")
     
         -- set up elements
+        print("Digging caves...")
         dig_caves(math.random(2,8))
+        print("Caves dug.")
+        print("Burying ancient treasure...")
         bury_ancient_treasure(math.random(1,4))
+        print("Treasure buried.")
         place_exit()
     
         mobs = {}
-    
+        
+        print("Setting danger level")
         if map_danger < 3 then
             monster_factory(3)
         else
             monster_factory(6)
         end
+        print("danger level set to " .. map_danger)
     
         -- dig out the player's space
         map[player.x][player.y] = 2
     
+        print("Saving map.")
         save_map()
+        print("Map saved.")
     end
 end
 
@@ -801,9 +875,7 @@ function load_map(x,y,start_x, start_y)
         print("no save file found for " .. x .. ", " .. y)
     else
     
-        
         loadstring("save_file_data=" .. save_file)()
-        print(save_file_data)
         
         treasure = save_file_data.treasure
         mobs = save_file_data.mobs
@@ -815,6 +887,15 @@ function load_map(x,y,start_x, start_y)
         
         map[player.x][player.y] = 2
     end
+end
+
+function draw_new_world_confirm()
+    love.graphics.setColor(0,0,0, 220)
+    love.graphics.rectangle( 'fill', 0,0, 440, 800 )
+    love.graphics.setColor(255,255,255)
+    love.graphics.print("Dang really?", 10, 100)
+    love.graphics.print("Press 'G' again to ", 10, 150)
+    love.graphics.print("destroy everything", 10, 200)
 end
 
 function table.val_to_str ( v )
